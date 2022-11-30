@@ -1,43 +1,57 @@
 from typing import List
+import httpx
 
+wwc2022_groups = {}
 
 class Team:
-    def __init__(self, name: str, players: List[str] = None, year: object = None):
+    def __init__(self, name: str, country: str, group_letter: str, group_points: int = 0,
+                 wins: int = 0, draws:int = 0, losses: int = 0, games_played: int = 0,
+                 goals=None):
+        if goals is None:
+            goals = {"goals_for": 0, "goals_against": 0}
         self.name = name
-        self.players = players
-        self.year = year
+        self.country = country
+        self.group_leter = group_letter
+        self.group_points = group_points
+        self.wins = wins
+        self.draws = draws
+        self.losses = losses
+        self.games_played = games_played
+        self.goals = goals
+
+    def get_goals_difference(self):
+        return self.goals["goals_against"] - self.goals["goals_for"]
 
     def __str__(self):
         return self.name
 
+class Group:
+    def __init__(self, letter: str, teams: List[Team]):
+        self.letter = letter
+        self.teams = teams
+    def __str__(self):
+        return self.letter
+    def get_n_place(self, n):
+        sorted_team_list = sorted(self.teams, key=lambda t1: (t1.group_points, t1.get_goals_difference(), t1.goals["goals_for"]), reverse=True)
+        return sorted_team_list[n-1]
+    def get_first_place(self):
+        return self.get_n_place(1)
+    def get_second_place(self):
+        return self.get_n_place(2)
 
-class Match:
-    def __init__(self, first_team: Team, second_team: Team):
-        self.first_team = first_team
-        self.second_team = second_team
-        self.year = first_team.year
-        self.has_ended = False
-        self.result = [0, 0]
 
-    def end_match(self, first_team_score: int, second_team_score: int):
-        self.result = [first_team_score, second_team_score]
-        self.has_ended = True
+def load_data():
+    data = httpx.request("GET", "https://worldcupjson.net/teams")
+    for group in data.json()["groups"]:
+        wwc2022_teams = []
+        for team in group["teams"]:
+            t = Team(team["name"], team["group_letter"], team["country"], team["group_points"],
+                     team["wins"], team["draws"], team["losses"], team["games_played"], {"goals_for": team["goals_for"], "goals_against": team["goals_against"]})
+            wwc2022_teams.append(t)
+        wwc2022_groups[group["letter"]] = Group(group["letter"], wwc2022_teams)
 
-    def get_winner(self):
-        if not self.has_ended:
-            raise Exception("Match hasn't ended yet!")
-        if self.result[0] == self.result[1]:
-            return f"{self.first_team} tied with {self.second_team}"
-        return str(self.first_team) if self.result[0] > self.result[1] else str(self.second_team)
-
-br = Team("Brazil",
-          players=["David Luiz", "Júlio César", "Maicon", "Marcelo", "Dante", "Fernandinho", "Dante", "Hulk", "Neymar Jr.",
-           "Thiago Silva"], year=2014)
-
-ge = Team("Germany", players=["Manuel Neuer", "Philipp Lahm", "Benedikt Höwedes", "Sami Khedira", "Thomas Müller", "Mesut Özil",
-                      "Miroslav Klose"], year=2014)
-
-match = Match(br, ge)
-match.end_match(1, 7)
-print(match.get_winner())
+if __name__ == "__main__":
+    load_data()
+    group_a = wwc2022_groups["A"]
+    print(group_a.get_first_place())
 

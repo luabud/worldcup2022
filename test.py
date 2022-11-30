@@ -1,14 +1,15 @@
-from models.team import Team
-from models.match import Match
+from main import Team, Group, load_data, wwc2022_groups
 
+def test_load_data():
+    assert len(wwc2022_groups) == 0
+    load_data()
+    assert len(wwc2022_groups) == 8
 
-def test_match_year():
-    match = Match(Team("Brazil", year=2014), Team("Germany", year=2014))
-    match.end_match(1, 7)
-    assert match.year == match.first_team.year == match.second_team.year
-
-
-def test_0_score():
-    match = Match(Team("Cameroon", year=2022), Team("Brazil", year=2022))
-    assert not (sum(match.result) or match.has_ended)
-
+def test_group_order():
+    load_data()
+    assert wwc2022_groups["A"].get_first_place().group_points >= wwc2022_groups["A"].get_second_place().group_points
+    assert wwc2022_groups["A"].get_first_place().group_points >= wwc2022_groups["A"].get_n_place(3).group_points
+    assert wwc2022_groups["A"].get_first_place().group_points >= wwc2022_groups["A"].get_n_place(4).group_points
+    assert wwc2022_groups["A"].get_second_place().group_points >= wwc2022_groups["A"].get_n_place(3).group_points
+    assert wwc2022_groups["A"].get_second_place().group_points >= wwc2022_groups["A"].get_n_place(4).group_points
+    assert wwc2022_groups["A"].get_n_place(3).group_points >= wwc2022_groups["A"].get_n_place(4).group_points
