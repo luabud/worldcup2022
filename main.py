@@ -40,7 +40,7 @@ class Team:
 
 
 class Group:
-    """A soccer/football team that has been qualified to play in the World Cup."""
+    """ A set of teams that play against each other in the World Cup."""
 
     def __init__(self, letter: str, teams: list[Team]) -> None:
         self.letter = letter
